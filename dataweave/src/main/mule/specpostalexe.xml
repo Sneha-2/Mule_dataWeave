@@ -59,6 +59,7 @@ flights :
 				<ee:set-variable resource="payload.dwl" variableName="json" />
 			</ee:variables>
 		</ee:transform>
+		<set-payload value="Success" doc:name="Set Payload" doc:id="7406506e-69fe-4437-bcba-46714e03e95b" />
 	</flow>
 	<flow name="specpostalexeFlow1" doc:id="e18d5ed0-18ed-4bbf-b930-0f6096a32659" >
 		<ee:transform doc:name="getTotalSeats" doc:id="bda6a39e-1ce2-4450-ad00-bd78d903ce45" >
