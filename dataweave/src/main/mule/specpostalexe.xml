@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="specpostalexeFlow" doc:id="ccf55385-47d8-4c2d-8248-351daad91654" >
+		<http:listener doc:name="Listener" doc:id="896010d6-52e4-44ff-a75e-e535d33544b6" config-ref="HTTP_Listener_config" path="/dataweave"/>
+		<ee:transform doc:name="Transform Message" doc:id="c4064712-32f3-40b9-abeb-29950103083a">
+			<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/dw
+import dasherize from dw::core::Strings
+type money = String  {format : "###.00"}
+type Flight = Object{class: "com.mulesoft.training.Flight"}
+//var numseats = 111
+//var numseats = (x=400) -> x
+/*var numseats = (planeType : String) ->
+     if(planeType contains ('737'))
+         150
+     else
+         300
+         */
+/*fun getNumseats(planeType : String)=
+   if(planeType contains ('737'))
+         150
+   else
+         300
+ */
+fun getNumseats(planeType : String)= do{
+   var maxseats = 
+       if(planeType contains ('737'))
+           150
+       else
+           300 
+   ---      
+   maxseats
+}
+
+---
+flights :
+	(payload..*return map (value,index)-> {
+		//flightCode : value.code,
+		destination : value.destination,
+		//totalSeats : getNumseats(value.planeType as String),
+		totalSeats: lookup("getTotalSeats",{planeType : value.planeType}),
+		planeType : dasherize(replace(value.planeType,/(Boing)/) with "Boeing"),
+		price : value.price as Number as money,
+		departureDate : value.departureDate as Date {format : "yyyy/MM/dd"} as String {format : "MMM dd,yyyy"},
+		availableSeats : value.emptySeats as Number
+	} as Object) filter ($.availableSeats !=0) distinctBy $ 
+	orderBy $.departureDate orderBy $.price 
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="payload.dwl" variableName="json" />
+			</ee:variables>
+		</ee:transform>
+	</flow>
+	<flow name="specpostalexeFlow1" doc:id="e18d5ed0-18ed-4bbf-b930-0f6096a32659" >
+		<ee:transform doc:name="getTotalSeats" doc:id="bda6a39e-1ce2-4450-ad00-bd78d903ce45" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+/*fun getNumseats(planeType : String)= do{
+   var maxseats = 
+       if(planeType contains ('737'))
+           150
+       else
+           300 
+   ---      
+   maxseats
+   }
+   * 
+   */
+---
+getNumseats(payload.planeType)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
